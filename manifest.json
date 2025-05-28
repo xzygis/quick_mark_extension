@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "网页收藏QuickMark",
+  "version": "1.0.0",
+  "description": "快速收藏、自动分组、酷炫新标签页",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icon16.png", "icon48.png", "icon128.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+} 
