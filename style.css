@@ -10,8 +10,18 @@ body {
   min-width: 320px;
 }
 h1 {
-  color: #222;
-  margin-bottom: 24px;
+  color: #357ae8;
+  background: none;
+  padding: 0 0 10px 0;
+  margin-bottom: 18px;
+  border-radius: 0;
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-align: left;
+  box-shadow: none;
+  text-shadow: none;
+  border: none;
 }
 .group-list {
   display: flex;
@@ -190,4 +200,33 @@ h1 {
     width: 190px;
     margin-right: 8px;
   }
+}
+.quickmark-tip {
+  position: fixed;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  max-width: 80vw;
+  z-index: 9999;
+  padding: 14px 32px;
+  border-radius: 10px;
+  font-size: 1.08em;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 4px 24px #357ae822, 0 1.5px 0 #fff4;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  letter-spacing: 1px;
+}
+.quickmark-tip-success {
+  background: linear-gradient(90deg, #eaf6ff 60%, #d2f1ff 100%);
+  color: #357ae8;
+  border: 1.5px solid #b3e0ff;
+}
+.quickmark-tip-error {
+  background: linear-gradient(90deg, #fff0f0 60%, #ffeaea 100%);
+  color: #d93030;
+  border: 1.5px solid #ffd6d6;
 } 
