@@ -2,10 +2,15 @@ let cachedGroupOrder = null;
 let isEditingTitle = false;
 
 function getColumnCount() {
-  if (window.innerWidth < 700) return 1;
-  if (window.innerWidth < 1100) return 2;
-  if (window.innerWidth < 1500) return 3;
-  return 4;
+  const containerWidth = document.getElementById('masonry').offsetWidth;
+  const groupElement = document.querySelector('.group');
+  let groupOuterWidth = 260 + 12; // 默认值
+  if (groupElement) {
+    const style = window.getComputedStyle(groupElement);
+    groupOuterWidth = groupElement.offsetWidth + parseFloat(style.marginRight) + parseFloat(style.marginLeft);
+  }
+  if (groupOuterWidth <= 0) groupOuterWidth = 272;
+  return Math.max(1, Math.floor(containerWidth / groupOuterWidth));
 }
 
 function getSortedGroups(groups, bookmarks) {
@@ -27,6 +32,27 @@ function getSortedGroups(groups, bookmarks) {
   return cachedGroupOrder.filter(g => groups[g]);
 }
 
+function getMasonryLayout(groups, containerWidth, minGroupWidth) {
+  // 最大列数
+  let maxCols = Math.max(1, Math.floor(containerWidth / minGroupWidth));
+  // 列宽固定
+  let groupOuterWidth = minGroupWidth;
+  // 列间距
+  let gap = maxCols > 1 ? (containerWidth - maxCols * groupOuterWidth) / (maxCols - 1) : 0;
+
+  // Masonry分配
+  let cols = Array.from({ length: maxCols }, () => []);
+  let colPageCounts = Array(maxCols).fill(0);
+  const sortedGroups = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+  sortedGroups.forEach(group => {
+    let minIdx = colPageCounts.indexOf(Math.min(...colPageCounts));
+    cols[minIdx].push(group);
+    colPageCounts[minIdx] += groups[group].length;
+  });
+
+  return { colsArr: cols, groupOuterWidth, gap };
+}
+
 function render() {
   chrome.storage.local.get({ bookmarks: [] }, function(data) {
     let bookmarks = data.bookmarks;
@@ -37,25 +63,34 @@ function render() {
       groups[b.group].push(b);
     });
 
-    // Masonry分配
-    const colCount = getColumnCount();
-    const cols = Array.from({ length: colCount }, () => []);
-    const colHeights = Array(colCount).fill(0);
-    const sortedGroups = getSortedGroups(groups, bookmarks);
-    sortedGroups.forEach(group => {
-      // 估算分组高度（网页数+1）
-      const h = (groups[group].length + 1) * 60;
-      const minIdx = colHeights.indexOf(Math.min(...colHeights));
-      cols[minIdx].push(group);
-      colHeights[minIdx] += h;
+    // 计算每个分组的高度
+    const groupHeights = {};
+    Object.keys(groups).forEach(group => {
+      groupHeights[group] = (groups[group].length + 1) * 60;
     });
 
-    // 渲染
+    // 动态计算列数和宽度
     const container = document.getElementById('masonry');
     container.innerHTML = '';
-    cols.forEach(colGroups => {
+    let minGroupWidth = 220, maxGroupWidth = 400;
+    const tempGroup = document.createElement('div');
+    tempGroup.className = 'group';
+    tempGroup.style.position = 'absolute';
+    tempGroup.style.visibility = 'hidden';
+    document.body.appendChild(tempGroup);
+    const groupStyle = window.getComputedStyle(tempGroup);
+    minGroupWidth = tempGroup.offsetWidth + parseFloat(groupStyle.marginRight) + parseFloat(groupStyle.marginLeft);
+    document.body.removeChild(tempGroup);
+    if (minGroupWidth <= 0) minGroupWidth = 272;
+    const containerWidth = container.offsetWidth;
+    const { colsArr, groupOuterWidth, gap } = getMasonryLayout(groups, containerWidth, minGroupWidth);
+
+    // 渲染
+    colsArr.forEach((colGroups, i) => {
       const colDiv = document.createElement('div');
       colDiv.className = 'masonry-col';
+      colDiv.style.width = groupOuterWidth + 'px';
+      colDiv.style.marginRight = (i === colsArr.length - 1) ? '0' : gap + 'px';
       colGroups.forEach(group => {
         // 分组渲染逻辑
         const groupDiv = document.createElement('div');
@@ -323,18 +358,16 @@ function importBookmarks() {
   input.click();
 }
 
-function addExportImportButtons() {
-  const container = document.querySelector('.newtab-container') || document.body;
+function ensureExportImportBar() {
+  // 保证导入/导出按钮始终在header-bar内
   let bar = document.getElementById('exportImportBar');
   if (!bar) {
     bar = document.createElement('div');
     bar.id = 'exportImportBar';
-    bar.style.marginBottom = '16px';
-    bar.style.display = 'flex';
-    bar.style.gap = '12px';
-    bar.style.justifyContent = 'flex-end';
-    bar.style.alignItems = 'center';
-    // 美化按钮
+    document.querySelector('.header-bar').appendChild(bar);
+  }
+  if (!bar.hasChildNodes()) {
+    // 重新渲染按钮
     const btnStyle = `
       background: linear-gradient(90deg, #4f8cff 60%, #357ae8 100%);
       color: #fff;
@@ -348,6 +381,7 @@ function addExportImportButtons() {
       transition: background 0.2s, box-shadow 0.2s;
       cursor: pointer;
       outline: none;
+      margin-left: 12px;
     `;
     const exportBtn = document.createElement('button');
     exportBtn.innerText = '导出收藏';
@@ -358,17 +392,16 @@ function addExportImportButtons() {
     const importBtn = document.createElement('button');
     importBtn.innerText = '导入收藏';
     importBtn.onclick = importBookmarks;
-    importBtn.style.cssText = btnStyle + 'margin-left:0;';
+    importBtn.style.cssText = btnStyle;
     importBtn.onmouseover = function() { this.style.background = 'linear-gradient(90deg, #357ae8 60%, #4f8cff 100%)'; };
     importBtn.onmouseout = function() { this.style.background = 'linear-gradient(90deg, #4f8cff 60%, #357ae8 100%)'; };
     bar.appendChild(exportBtn);
     bar.appendChild(importBtn);
-    container.insertBefore(bar, container.firstChild);
   }
 }
 
 window.addEventListener('DOMContentLoaded', function() {
   cachedGroupOrder = null;
-  addExportImportButtons();
+  ensureExportImportBar();
   render();
 }); 

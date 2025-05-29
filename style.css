@@ -229,4 +229,19 @@ h1 {
   background: linear-gradient(90deg, #fff0f0 60%, #ffeaea 100%);
   color: #d93030;
   border: 1.5px solid #ffd6d6;
+}
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0 24px;
+  background: #f5f6fa;
+}
+.main-content {
+  width: 100%;
+  padding: 0 24px 24px 24px;
+  box-sizing: border-box;
+}
+#exportImportBar {
+  margin-bottom: 0;
 } 
