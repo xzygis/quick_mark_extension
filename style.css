@@ -233,15 +233,62 @@ h1 {
 .header-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 0 24px;
+  justify-content: center;
+  gap: 32px;
+  padding: 32px 24px 0 24px;
   background: #f5f6fa;
+  position: relative;
+}
+#exportImportBar {
+  position: absolute;
+  right: 32px;
+  top: 32px;
+  margin-bottom: 0;
 }
 .main-content {
   width: 100%;
-  padding: 0 24px 24px 24px;
+  padding: 48px 24px 24px 24px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-#exportImportBar {
-  margin-bottom: 0;
+.search-bar-wrapper {
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px 24px 16px 48px;
+  font-size: 1.15em;
+  border: none;
+  border-radius: 32px;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+  box-shadow: 0 2px 16px #0001, 0 1.5px 0 #fff4;
+  transition: box-shadow 0.2s;
+}
+.search-input:focus {
+  box-shadow: 0 4px 24px #4f8cff22;
+}
+.search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  color: #a0a4aa;
+  pointer-events: none;
+}
+.bookmark-card.search-result-card {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
 } 

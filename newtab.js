@@ -404,4 +404,62 @@ window.addEventListener('DOMContentLoaded', function() {
   cachedGroupOrder = null;
   ensureExportImportBar();
   render();
-}); 
+  setupSearch();
+});
+
+function renderSearchResults(results) {
+  const container = document.getElementById('masonry');
+  container.innerHTML = '';
+  if (results.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.textAlign = 'center';
+    empty.style.color = '#888';
+    empty.style.margin = '32px 0';
+    empty.innerText = '未找到相关网页';
+    container.appendChild(empty);
+    return;
+  }
+  const list = document.createElement('div');
+  list.style.display = 'flex';
+  list.style.flexDirection = 'column';
+  list.style.gap = '14px';
+  list.style.alignItems = 'center';
+  results.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'bookmark-card search-result-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <a href="${b.url}" class="bookmark-link" tabindex="-1">
+        <img src="${b.favicon}" onerror="this.src='icon16.png'" />
+        <span class="bookmark-title" title="点击编辑网页名" style="cursor:pointer;">${b.title}</span>
+      </a>
+      <div class="bookmark-url" title="${b.url}">${b.url}</div>
+    `;
+    // 跳转
+    card.onclick = function(e) {
+      if (e.target.classList.contains('bookmark-title') || e.target.tagName === 'INPUT') return;
+      window.location.href = b.url;
+    };
+    list.appendChild(card);
+  });
+  container.appendChild(list);
+}
+
+function setupSearch() {
+  const input = document.getElementById('searchInput');
+  if (!input) return;
+  input.addEventListener('input', function() {
+    const keyword = input.value.trim().toLowerCase();
+    if (!keyword) {
+      render();
+      return;
+    }
+    chrome.storage.local.get({ bookmarks: [] }, function(data) {
+      const results = data.bookmarks.filter(b =>
+        (b.title && b.title.toLowerCase().includes(keyword)) ||
+        (b.url && b.url.toLowerCase().includes(keyword))
+      );
+      renderSearchResults(results);
+    });
+  });
+} 
