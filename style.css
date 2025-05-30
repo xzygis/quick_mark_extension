@@ -181,24 +181,28 @@ h1 {
   box-sizing: border-box;
 }
 .masonry-container {
-  display: block;
+  display: flex;
+  gap: 16px;
   width: 100%;
+  align-items: flex-start;
 }
 .masonry-col {
-  display: inline-block;
-  vertical-align: top;
-  width: 270px;
-  min-width: 0;
-  margin-right: 12px;
-  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 0;
+  min-width: 260px;
+  max-width: 1fr;
 }
-.masonry-col:last-child {
-  margin-right: 0;
-}
-@media (max-width: 900px) {
+@media (min-width: 1400px) {
+  .masonry-container {
+    gap: 10px;
+  }
   .masonry-col {
-    width: 190px;
-    margin-right: 8px;
+    gap: 8px;
+  }
+  .group {
+    padding: 6px 2px 2px 2px;
   }
 }
 .quickmark-tip {
@@ -291,4 +295,13 @@ h1 {
   max-width: 400px;
   width: 100%;
   margin: 0 auto;
+}
+.search-results-list {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 } 

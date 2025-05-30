@@ -40,16 +40,21 @@ function getMasonryLayout(groups, containerWidth, minGroupWidth) {
   // 列间距
   let gap = maxCols > 1 ? (containerWidth - maxCols * groupOuterWidth) / (maxCols - 1) : 0;
 
-  // Masonry分配
+  // Masonry分配优化
   let cols = Array.from({ length: maxCols }, () => []);
   let colPageCounts = Array(maxCols).fill(0);
   const sortedGroups = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
-  sortedGroups.forEach(group => {
+  // 先将最大N个分组分别分配到每一列
+  for (let i = 0; i < Math.min(maxCols, sortedGroups.length); i++) {
+    cols[i].push(sortedGroups[i]);
+    colPageCounts[i] += groups[sortedGroups[i]].length;
+  }
+  // 剩余分组再用贪心法分配
+  for (let i = maxCols; i < sortedGroups.length; i++) {
     let minIdx = colPageCounts.indexOf(Math.min(...colPageCounts));
-    cols[minIdx].push(group);
-    colPageCounts[minIdx] += groups[group].length;
-  });
-
+    cols[minIdx].push(sortedGroups[i]);
+    colPageCounts[minIdx] += groups[sortedGroups[i]].length;
+  }
   return { colsArr: cols, groupOuterWidth, gap };
 }
 
@@ -63,34 +68,31 @@ function render() {
       groups[b.group].push(b);
     });
 
-    // 计算每个分组的高度
-    const groupHeights = {};
-    Object.keys(groups).forEach(group => {
-      groupHeights[group] = (groups[group].length + 1) * 60;
-    });
-
-    // 动态计算列数和宽度
+    // Masonry分配：使每列网页总数尽量接近
     const container = document.getElementById('masonry');
     container.innerHTML = '';
-    let minGroupWidth = 220, maxGroupWidth = 400;
-    const tempGroup = document.createElement('div');
-    tempGroup.className = 'group';
-    tempGroup.style.position = 'absolute';
-    tempGroup.style.visibility = 'hidden';
-    document.body.appendChild(tempGroup);
-    const groupStyle = window.getComputedStyle(tempGroup);
-    minGroupWidth = tempGroup.offsetWidth + parseFloat(groupStyle.marginRight) + parseFloat(groupStyle.marginLeft);
-    document.body.removeChild(tempGroup);
-    if (minGroupWidth <= 0) minGroupWidth = 272;
+    // 动态计算列数和宽度
+    let minGroupWidth = 260;
     const containerWidth = container.offsetWidth;
-    const { colsArr, groupOuterWidth, gap } = getMasonryLayout(groups, containerWidth, minGroupWidth);
-
-    // 渲染
-    colsArr.forEach((colGroups, i) => {
+    let maxCols = Math.max(1, Math.floor(containerWidth / minGroupWidth));
+    let cols = Array.from({ length: maxCols }, () => []);
+    let colPageCounts = Array(maxCols).fill(0);
+    const sortedGroups = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+    // 先将最大N个分组分别分配到每一列
+    for (let i = 0; i < Math.min(maxCols, sortedGroups.length); i++) {
+      cols[i].push(sortedGroups[i]);
+      colPageCounts[i] += groups[sortedGroups[i]].length;
+    }
+    // 剩余分组再用贪心法分配
+    for (let i = maxCols; i < sortedGroups.length; i++) {
+      let minIdx = colPageCounts.indexOf(Math.min(...colPageCounts));
+      cols[minIdx].push(sortedGroups[i]);
+      colPageCounts[minIdx] += groups[sortedGroups[i]].length;
+    }
+    // 渲染每一列
+    cols.forEach(colGroups => {
       const colDiv = document.createElement('div');
       colDiv.className = 'masonry-col';
-      colDiv.style.width = groupOuterWidth + 'px';
-      colDiv.style.marginRight = (i === colsArr.length - 1) ? '0' : gap + 'px';
       colGroups.forEach(group => {
         // 分组渲染逻辑
         const groupDiv = document.createElement('div');
@@ -408,22 +410,25 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 function renderSearchResults(results) {
-  const container = document.getElementById('masonry');
-  container.innerHTML = '';
+  // 先移除旧的搜索结果容器
+  let oldList = document.querySelector('.search-results-list');
+  if (oldList) oldList.remove();
+  // 主内容区
+  const mainContent = document.querySelector('.main-content');
+  const masonry = document.getElementById('masonry');
+  masonry.innerHTML = '';
   if (results.length === 0) {
     const empty = document.createElement('div');
+    empty.className = 'search-results-list';
     empty.style.textAlign = 'center';
     empty.style.color = '#888';
-    empty.style.margin = '32px 0';
+    empty.style.margin = '32px auto 0 auto';
     empty.innerText = '未找到相关网页';
-    container.appendChild(empty);
+    mainContent.insertBefore(empty, masonry);
     return;
   }
   const list = document.createElement('div');
-  list.style.display = 'flex';
-  list.style.flexDirection = 'column';
-  list.style.gap = '14px';
-  list.style.alignItems = 'center';
+  list.className = 'search-results-list';
   results.forEach(b => {
     const card = document.createElement('div');
     card.className = 'bookmark-card search-result-card';
@@ -442,7 +447,7 @@ function renderSearchResults(results) {
     };
     list.appendChild(card);
   });
-  container.appendChild(list);
+  mainContent.insertBefore(list, masonry);
 }
 
 function setupSearch() {
@@ -450,10 +455,14 @@ function setupSearch() {
   if (!input) return;
   input.addEventListener('input', function() {
     const keyword = input.value.trim().toLowerCase();
+    // 移除搜索结果列表
+    let oldList = document.querySelector('.search-results-list');
     if (!keyword) {
+      if (oldList) oldList.remove();
       render();
       return;
     }
+    if (oldList) oldList.remove();
     chrome.storage.local.get({ bookmarks: [] }, function(data) {
       const results = data.bookmarks.filter(b =>
         (b.title && b.title.toLowerCase().includes(keyword)) ||
