@@ -35,15 +35,12 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       const bookmarks = data.bookmarks;
       const idx = bookmarks.findIndex(b => b.url === tab.url);
       if (idx !== -1) {
-        // 已收藏，弹出确认框提示是否取消收藏
-        if (confirm("当前网页已收藏，确定要取消收藏吗？")) {
-          bookmarks.splice(idx, 1);
-          chrome.storage.local.set({ bookmarks }, function() {
-            document.getElementById('status').innerText = '已取消收藏';
-            updateButton(false);
-          });
-        }
-        // 如果用户取消，则不执行任何操作
+        // 已收藏，直接取消收藏
+        bookmarks.splice(idx, 1);
+        chrome.storage.local.set({ bookmarks }, function() {
+          document.getElementById('status').innerText = '已取消收藏';
+          updateButton(false);
+        });
       } else {
         // 未收藏，添加
         const favicon = tab.favIconUrl || '';
